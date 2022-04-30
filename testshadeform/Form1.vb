@@ -85,6 +85,67 @@ Public Class Form1
         m_model.textures = New List(Of Bitmap)
         m_model.materials = New List(Of Material)
 
+        For Each m In m_model.sce.Meshes
+            If m.HasVertices = True Then
+                For i As Integer = 0 To m.VertexCount - 1
+                    Dim vertex As Vector3 = New Vector3
+                    vertex.X = m.Vertices(i).X
+                    vertex.Y = m.Vertices(i).Y
+                    vertex.Z = m.Vertices(i).Z
+                    m_model.Vertex.Add(vertex)
+                Next i
+
+            End If
+
+            If m.HasNormals = True Then
+                If m.HasNormals = True Then
+                    For i As Integer = 0 To m.VertexCount - 1
+                        Dim normal As Vector3 = New Vector3
+                        normal.X = m.Normals(i).X
+                        normal.Y = m.Normals(i).Y
+                        normal.Z = m.Normals(i).Z
+                        m_model.Normals.Add(normal)
+                    Next i
+
+                End If
+
+            End If
+
+            If m.HasTextureCoords(0) = True Then
+                For i As Integer = 0 To m.VertexCount - 1
+                    Dim uv As Vector2 = New Vector2
+                    uv.X = m.TextureCoordinateChannels(0)(i).X
+                    uv.Y = m.TextureCoordinateChannels(0)(i).Y
+                    m_model.Uv.Add(uv)
+                Next i
+
+            End If
+
+            If m.HasVertexColors(0) = True Then
+                For i As Integer = 0 To m.VertexCount - 1
+                    Dim color As Vector4 = New Vector4
+                    color.X = m.VertexColorChannels(0)(i).R
+                    color.Y = m.VertexColorChannels(0)(i).G
+                    color.Z = m.VertexColorChannels(0)(i).B
+                    color.W = m.VertexColorChannels(0)(i).A
+                    m_model.Colors.Add(color)
+                Next
+
+
+            End If
+
+            If m.HasFaces = True Then
+                For i As Integer = 0 To m.FaceCount - 1
+                    Dim faces As Vector3 = New Vector3
+                    faces.X = m.Faces(i).Indices(0)
+                    faces.Y = m.Faces(i).Indices(1)
+                    faces.Z = m.Faces(i).Indices(2)
+                    m_model.Faces.Add(faces)
+                Next i
+            End If
+        Next
+
+
         If m_model.sce.HasMaterials = True Then
             For m As Integer = 0 To m_model.sce.MaterialCount - 1
                 m_model.materials.Add(m_model.sce.Materials.ElementAt(m))
