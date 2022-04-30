@@ -171,51 +171,81 @@ Public Class Form1
 
     End Sub
 
-    Private Sub dramodel()
+    Private Sub dramodel1()
         Try
             mp = util.FromMatrix(m_model.sce.RootNode.Transform)
             mp.Transpose()
             GL.PushMatrix()
             GL.MultMatrix(mp)
 
-            For Each mo In m_model.sce.Meshes
+            Dim facm As Graphics.OpenGL.PrimitiveType
+            facm = Graphics.OpenGL.PrimitiveType.Triangles
+            GL.Begin(facm)
+            For i As Integer = 0 To m_model.Vertex.Count - 1
 
-                For i As Integer = 0 To mo.FaceCount - 1
+                If m_model.Colors.Count > 0 Then
+                    GL.Color4(m_model.Colors.ElementAt(i))
+                End If
 
-                    Dim fac = mo.Faces.ElementAt(i)
-                    Dim facm As Graphics.OpenGL.PrimitiveType
-                    Select Case fac.IndexCount
-
-                        Case 1
-                            facm = Graphics.OpenGL.PrimitiveType.Points
-                        Case 2
-                            facm = Graphics.OpenGL.PrimitiveType.Lines
-                        Case 3
-                            facm = Graphics.OpenGL.PrimitiveType.Triangles
-                        Case Else
-                            facm = Graphics.OpenGL.PrimitiveType.Polygon
-                    End Select
-                    GL.Begin(facm)
-
-                    For ii As UInteger = 0 To fac.IndexCount - 1
-                        Dim index = fac.Indices.ElementAt(ii)
-                        If mo.HasVertexColors(0) = True Then
-                            GL.Color4(util.FromColor(mo.VertexColorChannels.ElementAt(0).ElementAt(index)))
-                        End If
-                        GL.TexCoord2(util.FromVector2(mo.TextureCoordinateChannels(0).ElementAt(index)))
-                        GL.Vertex3(util.FromVector(mo.Vertices.ElementAt(index)))
-                        GL.Normal3(util.FromVector(mo.Normals.ElementAt(index)))
-                    Next
-                    GL.End()
-                Next
+                GL.TexCoord2(m_model.Uv.ElementAt(i))
+                GL.Vertex3(m_model.Vertex.ElementAt(i))
+                GL.Normal3(m_model.Normals.ElementAt(i))
 
             Next
+            GL.End()
             GL.ActiveTexture(m_model.tex)
             GL.BindTexture(TextureTarget.Texture2D, m_model.tex)
         Catch ex As Exception
             MessageBox.Show(ex.Message)
         End Try
     End Sub
+
+    'Private Sub dramodel()
+    '    Try
+    '        mp = util.FromMatrix(m_model.sce.RootNode.Transform)
+    '        mp.Transpose()
+    '        GL.PushMatrix()
+    '        GL.MultMatrix(mp)
+
+    '        For Each mo In m_model.sce.Meshes
+
+    '            For i As Integer = 0 To mo.FaceCount - 1
+
+    '                Dim fac = mo.Faces.ElementAt(i)
+    '                Dim facm As Graphics.OpenGL.PrimitiveType
+    '                Select Case fac.IndexCount
+
+    '                    Case 1
+    '                        facm = Graphics.OpenGL.PrimitiveType.Points
+    '                    Case 2
+    '                        facm = Graphics.OpenGL.PrimitiveType.Lines
+    '                    Case 3
+    '                        facm = Graphics.OpenGL.PrimitiveType.Triangles
+    '                    Case Else
+    '                        facm = Graphics.OpenGL.PrimitiveType.Polygon
+    '                End Select
+    '                GL.Begin(facm)
+
+    '                For ii As UInteger = 0 To fac.IndexCount - 1
+    '                    Dim index = fac.Indices.ElementAt(ii)
+
+    '                    If mo.HasVertexColors(0) = True Then
+    '                        GL.Color4(util.FromColor(mo.VertexColorChannels.ElementAt(0).ElementAt(index)))
+    '                    End If
+    '                    GL.TexCoord2(util.FromVector2(mo.TextureCoordinateChannels(0).ElementAt(index)))
+    '                    GL.Vertex3(util.FromVector(mo.Vertices.ElementAt(index)))
+    '                    GL.Normal3(util.FromVector(mo.Normals.ElementAt(index)))
+    '                Next
+    '                GL.End()
+    '            Next
+
+    '        Next
+    '        GL.ActiveTexture(m_model.tex)
+    '        GL.BindTexture(TextureTarget.Texture2D, m_model.tex)
+    '    Catch ex As Exception
+    '        MessageBox.Show(ex.Message)
+    '    End Try
+    'End Sub
 
     Private Sub GlControl1_Paint(sender As Object, e As PaintEventArgs) Handles GlControl1.Paint
         GL.ClearColor(Color.CornflowerBlue)
@@ -234,7 +264,7 @@ Public Class Form1
 
         domatrix()
 
-        dramodel()
+        dramodel1()
 
         GlControl1.SwapBuffers()
 
