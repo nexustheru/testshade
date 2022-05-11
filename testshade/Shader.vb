@@ -12,8 +12,8 @@ Public Class Shader
     End Sub
     Public Sub createShader()
 
-        vert_shader_source = IO.File.ReadAllText("vertex.glsl")
-        frag_shader_source = IO.File.ReadAllText("fragment.glsl")
+        vert_shader_source = IO.File.ReadAllText("FrostVertexShader.glsl")
+        frag_shader_source = IO.File.ReadAllText("FrostFragmentShader.glsl")
         vertex_shader = GL.CreateShader(ShaderType.VertexShader)
         GL.ShaderSource(vertex_shader, vert_shader_source)
 

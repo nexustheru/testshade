@@ -27,6 +27,7 @@ Partial Class Form1
         Me.Label2 = New System.Windows.Forms.Label()
         Me.RichTextBox1 = New System.Windows.Forms.RichTextBox()
         Me.Label3 = New System.Windows.Forms.Label()
+        Me.Button1 = New System.Windows.Forms.Button()
         Me.SuspendLayout()
         '
         'GlControl1
@@ -34,7 +35,7 @@ Partial Class Form1
         Me.GlControl1.BackColor = System.Drawing.Color.Black
         Me.GlControl1.Location = New System.Drawing.Point(679, 12)
         Me.GlControl1.Name = "GlControl1"
-        Me.GlControl1.Size = New System.Drawing.Size(408, 478)
+        Me.GlControl1.Size = New System.Drawing.Size(408, 450)
         Me.GlControl1.TabIndex = 0
         Me.GlControl1.VSync = False
         '
@@ -73,11 +74,21 @@ Partial Class Form1
         Me.Label3.TabIndex = 7
         Me.Label3.Text = "Label3"
         '
+        'Button1
+        '
+        Me.Button1.Location = New System.Drawing.Point(612, 477)
+        Me.Button1.Name = "Button1"
+        Me.Button1.Size = New System.Drawing.Size(75, 23)
+        Me.Button1.TabIndex = 8
+        Me.Button1.Text = "Button1"
+        Me.Button1.UseVisualStyleBackColor = True
+        '
         'Form1
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.ClientSize = New System.Drawing.Size(1115, 514)
+        Me.Controls.Add(Me.Button1)
         Me.Controls.Add(Me.Label3)
         Me.Controls.Add(Me.RichTextBox1)
         Me.Controls.Add(Me.Label2)
@@ -95,4 +106,5 @@ Partial Class Form1
     Friend WithEvents Label2 As Label
     Friend WithEvents RichTextBox1 As RichTextBox
     Friend WithEvents Label3 As Label
+    Friend WithEvents Button1 As Button
 End Class
