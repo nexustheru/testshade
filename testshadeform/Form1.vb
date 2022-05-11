@@ -4,6 +4,7 @@ Imports System.IO
 Imports OpenTK
 Imports OpenTK.Graphics.OpenGL
 Imports Assimp
+Imports System.Runtime.InteropServices
 
 Public Class Form1
 
@@ -27,7 +28,7 @@ Public Class Form1
     Private texture_bmp As New Bitmap(500, 500)
 
     Public m_model As Model
-    Dim vao, vbo As Integer
+    Dim vao, vaoobject, vbo, vboobject, ebo As Integer
     Dim util As utility
     Dim _shade As Shader
     Dim time As Timers.Timer
@@ -55,6 +56,7 @@ Public Class Form1
         time = New Timers.Timer(10)
         AddHandler time.Elapsed, AddressOf glUpdate
         time.Start()
+        initElement()
     End Sub
 
     Public Sub PrepareImage()
@@ -86,6 +88,7 @@ Public Class Form1
         m_model.materials = New List(Of Material)
 
         For Each m In m_model.sce.Meshes
+
             If m.HasVertices = True Then
                 For i As Integer = 0 To m.VertexCount - 1
                     Dim vertex As Vector3 = New Vector3
@@ -93,62 +96,58 @@ Public Class Form1
                     vertex.Y = m.Vertices(i).Y
                     vertex.Z = m.Vertices(i).Z
                     m_model.Vertex.Add(vertex)
-                Next i
 
-            End If
-
-            If m.HasNormals = True Then
-                If m.HasNormals = True Then
-                    For i As Integer = 0 To m.VertexCount - 1
+                    If m.HasNormals = True Then
                         Dim normal As Vector3 = New Vector3
                         normal.X = m.Normals(i).X
                         normal.Y = m.Normals(i).Y
                         normal.Z = m.Normals(i).Z
                         m_model.Normals.Add(normal)
-                    Next i
+                    End If
+                    If m.HasTextureCoords(0) = True Then
 
-                End If
+                        Dim uv As Vector2 = New Vector2
+                        uv.X = m.TextureCoordinateChannels(0)(i).X
+                        uv.Y = m.TextureCoordinateChannels(0)(i).Y
+                        m_model.Uv.Add(uv)
 
-            End If
+                    End If
+                    If m.HasVertexColors(0) = True Then
+                        Dim color As Vector4 = New Vector4
+                        color.X = m.VertexColorChannels(0)(i).R
+                        color.Y = m.VertexColorChannels(0)(i).G
+                        color.Z = m.VertexColorChannels(0)(i).B
+                        color.W = m.VertexColorChannels(0)(i).A
+                        m_model.Colors.Add(color)
+                    End If
 
-            If m.HasTextureCoords(0) = True Then
-                For i As Integer = 0 To m.VertexCount - 1
-                    Dim uv As Vector2 = New Vector2
-                    uv.X = m.TextureCoordinateChannels(0)(i).X
-                    uv.Y = m.TextureCoordinateChannels(0)(i).Y
-                    m_model.Uv.Add(uv)
+
                 Next i
-
-            End If
-
-            If m.HasVertexColors(0) = True Then
-                For i As Integer = 0 To m.VertexCount - 1
-                    Dim color As Vector4 = New Vector4
-                    color.X = m.VertexColorChannels(0)(i).R
-                    color.Y = m.VertexColorChannels(0)(i).G
-                    color.Z = m.VertexColorChannels(0)(i).B
-                    color.W = m.VertexColorChannels(0)(i).A
-                    m_model.Colors.Add(color)
-                Next
-
 
             End If
 
             If m.HasFaces = True Then
                 For i As Integer = 0 To m.FaceCount - 1
-                    Dim faces As Vector3 = New Vector3
-                    faces.X = m.Faces(i).Indices(0)
-                    faces.Y = m.Faces(i).Indices(1)
-                    faces.Z = m.Faces(i).Indices(2)
-                    m_model.Faces.Add(faces)
-                Next i
+                    Dim fa = m.Faces.ElementAt(i)
+                    For j As UInteger = 0 To fa.IndexCount - 1
+                        Dim faces As Vector3 = New Vector3(fa.Indices.ElementAt(j))
+                        m_model.Faces.Add(faces)
+                    Next
+                Next
             End If
         Next
 
+        RichTextBox1.AppendText("vertex added" + vbNewLine)
+        RichTextBox1.AppendText("normals added" + vbNewLine)
+        RichTextBox1.AppendText("texturecoords added" + vbNewLine)
+        RichTextBox1.AppendText("vertexcolor added" + vbNewLine)
+        RichTextBox1.AppendText("faces added" + vbNewLine)
 
         If m_model.sce.HasMaterials = True Then
+            RichTextBox1.AppendText("material added" + vbNewLine)
             For m As Integer = 0 To m_model.sce.MaterialCount - 1
                 m_model.materials.Add(m_model.sce.Materials.ElementAt(m))
+
             Next
 
             If m_model.sce.HasTextures = True Then
@@ -181,76 +180,83 @@ Public Class Form1
             Dim facm As Graphics.OpenGL.PrimitiveType
             facm = Graphics.OpenGL.PrimitiveType.Triangles
             GL.Begin(facm)
+            If m_model.materials.Count > 0 Then
+                GL.Material(MaterialFace.FrontAndBack, MaterialParameter.Specular, m_model.materials.ElementAt(0).Reflectivity)
+                GL.Material(MaterialFace.FrontAndBack, MaterialParameter.Shininess, m_model.materials.ElementAt(0).Shininess)
+                Dim amb As Single = m_model.materials.ElementAt(0).ColorAmbient.R + m_model.materials.ElementAt(0).ColorAmbient.G + m_model.materials.ElementAt(0).ColorAmbient.B + m_model.materials.ElementAt(0).ColorAmbient.A
+                GL.Material(MaterialFace.FrontAndBack, MaterialParameter.Ambient, amb)
+            End If
+
             For i As Integer = 0 To m_model.Vertex.Count - 1
+
+                If m_model.Vertex.Count > 0 Then
+                    GL.Vertex3(m_model.Vertex.ElementAt(i))
+                End If
+                If m_model.Normals.Count > 0 Then
+                    GL.Normal3(m_model.Normals.ElementAt(i))
+                End If
+
+                If m_model.Uv.Count > 0 Then
+                    GL.TexCoord2(m_model.Uv.ElementAt(i))
+                End If
 
                 If m_model.Colors.Count > 0 Then
                     GL.Color4(m_model.Colors.ElementAt(i))
                 End If
-
-                GL.TexCoord2(m_model.Uv.ElementAt(i))
-                GL.Vertex3(m_model.Vertex.ElementAt(i))
-                GL.Normal3(m_model.Normals.ElementAt(i))
-
             Next
             GL.End()
             GL.ActiveTexture(m_model.tex)
             GL.BindTexture(TextureTarget.Texture2D, m_model.tex)
+
         Catch ex As Exception
             MessageBox.Show(ex.Message)
         End Try
     End Sub
 
-    'Private Sub dramodel()
-    '    Try
-    '        mp = util.FromMatrix(m_model.sce.RootNode.Transform)
-    '        mp.Transpose()
-    '        GL.PushMatrix()
-    '        GL.MultMatrix(mp)
+    Private Sub initElement()
+        GL.EnableClientState(ArrayCap.VertexArray)
+        vao = GL.GenBuffer()
+        ebo = GL.GenBuffer()
+        vaoobject = GL.GenVertexArray()
 
-    '        For Each mo In m_model.sce.Meshes
+        GL.BindVertexArray(vaoobject)
 
-    '            For i As Integer = 0 To mo.FaceCount - 1
+        GL.BindBuffer(BufferTarget.ArrayBuffer, vao)
+        Dim byteCount = m_model.Vertex.Count * 4 * 3
+        GL.BufferData(BufferTarget.ArrayBuffer, New IntPtr(byteCount), m_model.Vertex.ToArray(), BufferUsageHint.StaticDraw)
+        GL.EnableVertexAttribArray(0)
+        GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, False, m_model.Vertex.Count * Vector3.SizeInBytes, 0)
+        GL.BindBuffer(BufferTarget.ArrayBuffer, 0)
 
-    '                Dim fac = mo.Faces.ElementAt(i)
-    '                Dim facm As Graphics.OpenGL.PrimitiveType
-    '                Select Case fac.IndexCount
 
-    '                    Case 1
-    '                        facm = Graphics.OpenGL.PrimitiveType.Points
-    '                    Case 2
-    '                        facm = Graphics.OpenGL.PrimitiveType.Lines
-    '                    Case 3
-    '                        facm = Graphics.OpenGL.PrimitiveType.Triangles
-    '                    Case Else
-    '                        facm = Graphics.OpenGL.PrimitiveType.Polygon
-    '                End Select
-    '                GL.Begin(facm)
+        vboobject = GL.GenBuffer()
+        GL.BindBuffer(BufferTarget.ArrayBuffer, vaoobject)
+        Dim byteCount1 = m_model.Faces.Count * 4 * 3
+        GL.BufferData(BufferTarget.ArrayBuffer, New IntPtr(byteCount1), m_model.Faces.ToArray(), BufferUsageHint.StaticDraw)
+        GL.BindBuffer(BufferTarget.ArrayBuffer, 0)
 
-    '                For ii As UInteger = 0 To fac.IndexCount - 1
-    '                    Dim index = fac.Indices.ElementAt(ii)
+        GL.BindVertexArray(0) 'unbind
 
-    '                    If mo.HasVertexColors(0) = True Then
-    '                        GL.Color4(util.FromColor(mo.VertexColorChannels.ElementAt(0).ElementAt(index)))
-    '                    End If
-    '                    GL.TexCoord2(util.FromVector2(mo.TextureCoordinateChannels(0).ElementAt(index)))
-    '                    GL.Vertex3(util.FromVector(mo.Vertices.ElementAt(index)))
-    '                    GL.Normal3(util.FromVector(mo.Normals.ElementAt(index)))
-    '                Next
-    '                GL.End()
-    '            Next
+    End Sub
 
-    '        Next
-    '        GL.ActiveTexture(m_model.tex)
-    '        GL.BindTexture(TextureTarget.Texture2D, m_model.tex)
-    '    Catch ex As Exception
-    '        MessageBox.Show(ex.Message)
-    '    End Try
-    'End Sub
+    Private Sub dramodelElement()
+
+        mp = util.FromMatrix(m_model.sce.RootNode.Transform)
+        mp.Transpose()
+        GL.PushMatrix()
+        GL.MultMatrix(mp)
+        'GL.EnableClientState(ArrayCap.VertexArray)
+        GL.BindVertexArray(vaoobject)
+        Dim res = m_model.Faces.Count / 3
+        GL.DrawElements(BeginMode.Triangles, 0, DrawElementsType.UnsignedInt, 0)
+        GL.BindVertexArray(0)
+    End Sub
 
     Private Sub GlControl1_Paint(sender As Object, e As PaintEventArgs) Handles GlControl1.Paint
         GL.ClearColor(Color.CornflowerBlue)
         GL.Clear(ClearBufferMask.ColorBufferBit)
         GL.Clear(ClearBufferMask.DepthBufferBit)
+
         GL.Hint(HintTarget.PerspectiveCorrectionHint, HintMode.Nicest)
         GL.Enable(EnableCap.Lighting)
         GL.Enable(EnableCap.Light0)
@@ -263,8 +269,8 @@ Public Class Form1
         GL.CullFace(CullFaceMode.Back)
 
         domatrix()
-
-        dramodel1()
+        dramodelElement()
+        ' dramodel1()
 
         GlControl1.SwapBuffers()
 

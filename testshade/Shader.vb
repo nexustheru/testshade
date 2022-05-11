@@ -1,169 +1,160 @@
-﻿Imports System
-Imports System.IO
-Imports System.Text
-Imports System.Collections.Generic
-Imports OpenTK
-Imports OpenTK.Graphics
+﻿Imports OpenTK
 Imports OpenTK.Graphics.OpenGL
 
 Public Class Shader
-    Public ReadOnly Handle As Integer
-    Public _fragObj, _vertexObj, statusCode As Integer
-    Dim info As String
+    Private vert_shader_source, frag_shader_source, info As String
+    Public vertex_shader, fragment_shader, shader_program, stats As Integer
     Public locations As Dictionary(Of String, Integer) = New Dictionary(Of String, Integer)
+    Public mat As Matrix4
 
-    Public Sub compileVertex(ByVal vertPath As String)
-        GL.ShaderSource(_vertexObj, File.ReadAllText(vertPath))
+    Public Sub DebugMessage(message As String)
+        Console.WriteLine(message)
+    End Sub
+    Public Sub createShader()
 
-        GL.CompileShader(_vertexObj)
-        info = GL.GetShaderInfoLog(_vertexObj)
+        vert_shader_source = IO.File.ReadAllText("vertex.glsl")
+        frag_shader_source = IO.File.ReadAllText("fragment.glsl")
+        vertex_shader = GL.CreateShader(ShaderType.VertexShader)
+        GL.ShaderSource(vertex_shader, vert_shader_source)
 
+        fragment_shader = GL.CreateShader(ShaderType.FragmentShader)
+        GL.ShaderSource(fragment_shader, frag_shader_source)
 
-        GL.GetShader(_vertexObj, ShaderParameter.CompileStatus, statusCode)
-        If statusCode <> 1 Then
-            Console.Write("vert compiling error ")
+        compileShader()
+        shader_program = GL.CreateProgram()
+        GL.AttachShader(shader_program, vertex_shader)
+        GL.AttachShader(shader_program, fragment_shader)
+
+        'checkAndSetLocation()
+        'useShader()
+        'setUni()
+    End Sub
+    Public Sub compileShader()
+        'vertex shader
+        GL.CompileShader(vertex_shader)
+        info = GL.GetShaderInfoLog(vertex_shader)
+        GL.GetShader(vertex_shader, ShaderParameter.CompileStatus, stats)
+        If stats <> 1 Then
+            Console.WriteLine("vert compiling error" + vbNewLine)
+            Throw New ApplicationException(info)
+        End If
+
+        'fragment shader
+        GL.CompileShader(fragment_shader)
+        info = GL.GetShaderInfoLog(fragment_shader)
+        GL.GetShader(fragment_shader, ShaderParameter.CompileStatus, stats)
+        If stats <> 1 Then
+            Console.WriteLine("frag compiling error" + vbNewLine)
             Throw New ApplicationException(info)
         End If
     End Sub
-    Public Sub compileFragment(fragPath As String)
-        GL.ShaderSource(_fragObj, File.ReadAllText(fragPath))
-
-        GL.CompileShader(_fragObj)
-        info = GL.GetShaderInfoLog(_fragObj)
-
-        GL.GetShader(_fragObj, ShaderParameter.CompileStatus, statusCode)
-        If statusCode <> 1 Then
-            Console.Write("frag compiling error ")
-            Throw New ApplicationException(info)
-        End If
-    End Sub
-
-    Public Sub linkandUse()
-        Dim stats As Integer
-
-        GL.EnableVertexAttribArray(0)
-        GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, False, Vector3.SizeInBytes, 0) 'vertex
-
-        GL.VertexAttribPointer(1, 3, VertexAttribPointerType.Float, False, Vector3.SizeInBytes, 0) 'normal
-        GL.EnableVertexAttribArray(1)
-
-        GL.VertexAttribPointer(2, 2, VertexAttribPointerType.Float, False, Vector2.SizeInBytes, 0) 'tex
-        GL.EnableVertexAttribArray(2)
-
-        GL.VertexAttribPointer(3, 4, VertexAttribPointerType.Float, False, Vector4.SizeInBytes, 0) 'color
-        GL.EnableVertexAttribArray(3)
-
-
-        GL.LinkProgram(Handle)
-        GL.GetProgram(Handle, GetProgramParameterName.LinkStatus, stats)
-
+    Public Sub linkShader()
+        GL.LinkProgram(shader_program)
+        GL.GetProgram(shader_program, GetProgramParameterName.LinkStatus, stats)
         If stats = All.True Then
-            checkBindingd(Handle)
-            GL.UseProgram(Handle)
-            Console.Write("Linked and using shadeprogram" + vbNewLine)
-        Else
-            Console.Write("programs is not linked" + vbNewLine)
+            Console.WriteLine("Linked " + vbNewLine)
         End If
+    End Sub
+    Public Sub useShader()
+        GL.UseProgram(shader_program)
 
     End Sub
-
-    Public Sub setMatrix(ByVal mat As Matrix4, position As Integer)
-        GL.UniformMatrix4(position, True, mat)
-        ' GL.UniformMatrix4(projv, True, perspective)
+    Public Sub deleteShader()
+        GL.DeleteProgram(shader_program)
+        GL.DeleteShader(vertex_shader)
+        GL.DeleteShader(fragment_shader)
     End Sub
-    Public Sub New(ByVal vertPath As String, ByVal fragPath As String)
-        Try
-            _vertexObj = GL.CreateShader(ShaderType.VertexShader)
-            _fragObj = GL.CreateShader(ShaderType.FragmentShader)
+    Public Sub checkAndSetLocation()
+        If stats = All.True Then
 
-            compileVertex(vertPath)
-            compileFragment(fragPath)
+            Dim positionLocation = GL.GetAttribLocation(shader_program, "position")
+            If positionLocation = -1 Then
+                Console.WriteLine("positionLocation is not bound" + vbNewLine)
+            Else
+                GL.EnableVertexAttribArray(positionLocation)
+                locations.Add("position", positionLocation)
+                Console.WriteLine("positionLocation bound to " & positionLocation.ToString() + vbNewLine)
+            End If
 
-            Handle = GL.CreateProgram()
-            OpenTK.Graphics.OpenGL.GL.AttachShader(Handle, _vertexObj)
-            OpenTK.Graphics.OpenGL.GL.AttachShader(Handle, _fragObj)
 
-            linkandUse()
+            Dim normalLocation = GL.GetAttribLocation(shader_program, "normals")
+            If normalLocation = -1 Then
+                Console.WriteLine("normallocation is not bound" + vbNewLine)
+            Else
+                GL.EnableVertexAttribArray(normalLocation)
+                locations.Add("normals", normalLocation)
+                Console.WriteLine("normalLocation bound to " & normalLocation.ToString() + vbNewLine)
+            End If
 
-            OpenTK.Graphics.OpenGL.GL.DetachShader(Handle, _vertexObj)
-            OpenTK.Graphics.OpenGL.GL.DetachShader(Handle, _fragObj)
-            OpenTK.Graphics.OpenGL.GL.DeleteShader(_fragObj)
-            OpenTK.Graphics.OpenGL.GL.DeleteShader(_vertexObj)
 
-            Console.Write("created")
-        Catch ex As Exception
-            Console.WriteLine(ex.Message)
-        End Try
+            Dim texLocation = GL.GetAttribLocation(shader_program, "texCoord")
+            If texLocation = -1 Then
+                Console.WriteLine("texcoordLocation is not bound" + vbNewLine)
+            Else
+                GL.EnableVertexAttribArray(texLocation)
+                locations.Add("texcoord", texLocation)
+                Console.WriteLine("texcoordLocation bound to " & texLocation.ToString() + vbNewLine)
+            End If
 
+
+            Dim colorLocation = GL.GetAttribLocation(shader_program, "colorr")
+            If colorLocation = -1 Then
+                Console.WriteLine("colorLocation is not bound" + vbNewLine)
+            Else
+                GL.EnableVertexAttribArray(colorLocation)
+                locations.Add("colorr", colorLocation)
+                Console.WriteLine("colorLocation bound to " & colorLocation.ToString() + vbNewLine)
+            End If
+
+
+            Dim modelv = GL.GetUniformLocation(shader_program, "models")
+            If modelv = -1 Then
+                Console.WriteLine("model is not bound" + vbNewLine)
+            Else
+                locations.Add("models", modelv)
+                Console.WriteLine("model bound to " & modelv.ToString() + vbNewLine)
+            End If
+
+            Dim projv = GL.GetUniformLocation(shader_program, "projection")
+            If projv = -1 Then
+                Console.WriteLine("projection is not bound" + vbNewLine)
+            Else
+                locations.Add("projection", projv)
+                Console.WriteLine("projection bound to " & projv.ToString() + vbNewLine)
+            End If
+
+            Dim view = GL.GetUniformLocation(shader_program, "view")
+            If view = -1 Then
+                Console.WriteLine("view is not bound" + vbNewLine)
+            Else
+                locations.Add("view", view)
+                Console.WriteLine("view bound to " & view.ToString() + vbNewLine)
+            End If
+
+            Dim texturee = GL.GetUniformLocation(shader_program, "pic")
+            If texturee = -1 Then
+                Console.WriteLine("pic is not bound" + vbNewLine)
+            Else
+
+                locations.Add("pic", texturee)
+                Console.WriteLine("picbound to " & texturee.ToString() + vbNewLine)
+            End If
+
+            Console.WriteLine("Linked " + vbNewLine)
+        Else
+            Console.WriteLine("Program is not linked" + vbNewLine)
+        End If
     End Sub
-    Public Sub Use()
-        OpenTK.Graphics.OpenGL.GL.UseProgram(Handle)
-    End Sub
 
-    Public Sub checkBindingd(shader_program As Integer)
-        Dim positionLocation = GL.GetAttribLocation(shader_program, "position")
-        If positionLocation = -1 Then
-            Console.WriteLine("positionLocation is not bound" + vbNewLine)
-        Else
-            GL.EnableVertexAttribArray(positionLocation)
-            locations.Add("position", positionLocation)
-            Console.WriteLine("positionLocation bound to " & positionLocation.ToString() + vbNewLine)
-        End If
+    Public Sub setUni()
+        For Each item In locations
+            If item.Key = "projection" Then
+                GL.UniformMatrix4(item.Value, True, mat)
+            ElseIf item.Key = "pic" Then
+                GL.Uniform1(item.Value, 0)
+            End If
 
-
-        Dim normalLocation = GL.GetAttribLocation(shader_program, "normal")
-        If normalLocation = -1 Then
-            Console.WriteLine("normallocation is not bound" + vbNewLine)
-        Else
-            GL.EnableVertexAttribArray(normalLocation)
-            locations.Add("normal", normalLocation)
-            Console.WriteLine("normalLocation bound to " & normalLocation.ToString() + vbNewLine)
-        End If
-
-
-        Dim texLocation = GL.GetAttribLocation(shader_program, "uv")
-        If texLocation = -1 Then
-            Console.WriteLine("texLocation is not bound" + vbNewLine)
-        Else
-            GL.EnableVertexAttribArray(texLocation)
-            locations.Add("uv", texLocation)
-            Console.WriteLine("texLocation bound to " & texLocation.ToString() + vbNewLine)
-        End If
-
-
-        Dim colorLocation = GL.GetAttribLocation(shader_program, "colors")
-        If colorLocation = -1 Then
-            Console.WriteLine("colorLocation is not bound" + vbNewLine)
-        Else
-            GL.EnableVertexAttribArray(colorLocation)
-            locations.Add("colors", colorLocation)
-            Console.WriteLine("colorLocation bound to " & colorLocation.ToString() + vbNewLine)
-        End If
-
-        Dim modelv = GL.GetUniformLocation(shader_program, "models")
-        If modelv = -1 Then
-            Console.WriteLine("model is not bound" + vbNewLine)
-        Else
-            locations.Add("model", modelv)
-            Console.WriteLine("model bound to " & modelv.ToString() + vbNewLine)
-        End If
-
-        Dim projv = GL.GetUniformLocation(shader_program, "projection")
-        If projv = -1 Then
-            Console.WriteLine("projection is not bound" + vbNewLine)
-        Else
-            locations.Add("projection", projv)
-            Console.WriteLine("projection bound to " & projv.ToString() + vbNewLine)
-        End If
-
-        Dim view = GL.GetUniformLocation(shader_program, "view")
-        If view = -1 Then
-            Console.WriteLine("view is not bound" + vbNewLine)
-        Else
-            locations.Add("view", view)
-            Console.WriteLine("view bound to " & view.ToString() + vbNewLine)
-        End If
-
+        Next
 
     End Sub
 End Class

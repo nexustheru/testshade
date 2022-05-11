@@ -23,6 +23,10 @@ Public Class utility
         Return c
     End Function
 
+    Public Function invertNormal(ByVal norm As Vector3) As Vector3
+
+    End Function
+
     Public Function TexelToColor(ByVal tex As Texel) As Color
         Dim col = Color.FromArgb(tex.R, tex.G, tex.B, tex.A)
         Return col
@@ -53,6 +57,7 @@ Public Class utility
         Dim img As Bitmap = New Bitmap(New MemoryStream(compressed.CompressedData))
         Return img
     End Function
+
     Public Function loadimageFromModel(ByVal bitmap As Bitmap, tex As Integer) As Integer
         GL.Enable(EnableCap.Texture2D)
 

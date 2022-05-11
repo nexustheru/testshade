@@ -7,6 +7,9 @@ Imports OpenTK.Graphics
 Imports OpenTK.Graphics.OpenGL
 Public Class utility
     Dim sce As Assimp.Scene
+    Public Sub New()
+
+    End Sub
     Public Sub New(ByVal scene As Assimp.Scene)
         sce = scene
     End Sub
@@ -124,4 +127,8 @@ Public Class utility
         Return tex
     End Function
 
+    Public Function GenerateBitmap(ByVal compressed As EmbeddedTexture) As Bitmap
+        Dim img As Bitmap = New Bitmap(New MemoryStream(compressed.CompressedData))
+        Return img
+    End Function
 End Class
