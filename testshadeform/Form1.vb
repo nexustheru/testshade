@@ -27,11 +27,10 @@ Public Class Form1
     Dim util As utility
 
     Private Sub Button1_Click(sender As Object, e As EventArgs) Handles Button1.Click
-        Dim loadfile = New Task(AddressOf loadAssimp)
-        loadfile.Start()
-        loadfile.Wait()
-        setupModel()
+        loadAssimp()
         assimMatrix = util.FromMatrix(sce.RootNode.Transform)
+        setupModel()
+
     End Sub
 
     Private Sub Form1_Load(sender As Object, e As EventArgs) Handles MyBase.Load
@@ -67,12 +66,15 @@ Public Class Form1
         GL.FrontFace(FrontFaceDirection.Ccw)
         GL.Enable(EnableCap.Texture2D)
         GL.CullFace(CullFaceMode.Back)
+        _shader.useShader()
+        setMatrix()
         If _indices.Count > 0 Then
-            _shader.useShader()
-            setMatrix()
+            GL.BindTexture(TextureTarget.Texture2D, textureid)
             GL.BindVertexArray(vertexobject)
             GL.DrawElements(OpenGL.PrimitiveType.Triangles, _indices.Count, OpenGL.DrawElementsType.UnsignedInt, 0)
             GL.BindBuffer(BufferTarget.ArrayBuffer, 0)
+            GL.BindTexture(TextureTarget.Texture2D, 0)
+            GlControl1.Invalidate()
         End If
 
         GlControl1.SwapBuffers()
@@ -96,7 +98,7 @@ Public Class Form1
     End Sub
 
 
-    Public Async Sub loadAssimp()
+    Public Sub loadAssimp()
         Dim asa As AssimpContext = New AssimpContext()
         asa.SetConfig(New Configs.NormalSmoothingAngleConfig(66.0F))
         sce = asa.ImportFile("ball.fbx", PostProcessPreset.TargetRealTimeMaximumQuality And PostProcessSteps.Triangulate And PostProcessSteps.FlipUVs AndAlso PostProcessSteps.GenerateSmoothNormals)
@@ -224,6 +226,6 @@ Public Class Form1
         Dim data As BitmapData = ima.LockBits(New System.Drawing.Rectangle(0, 0, ima.Width, ima.Height), ImageLockMode.[ReadOnly], System.Drawing.Imaging.PixelFormat.Format32bppArgb)
         GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, data.Width, data.Height, 0, OpenTK.Graphics.OpenGL.PixelFormat.Bgra, PixelType.UnsignedByte, data.Scan0)
         ima.UnlockBits(data)
-
+        GL.BindTexture(TextureTarget.Texture2D, 0)
     End Sub
 End Class
